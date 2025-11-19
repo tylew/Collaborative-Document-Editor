@@ -1,0 +1,111 @@
+[Document] V2 apply also failed (error 3)
+[Document] V2 apply also failed (error 3)
+[Document] V2 apply also failed (error 3)
+[Document] V2 apply also failed (error 3)
+[Document] V2 apply also failed (error 3)
+[Document] V2 apply also failed (error 3)
+[Document] V2 apply also failed (error 3)
+[Document] V2 apply also failed (error 3)
+[Document] V2 apply also failed (error 3)
+===========================================
+   CRDT Collaborative Document Server
+===========================================
+
+[Document] Initialized
+[Persistence] No saved document found
+=== Document Content ===
+(empty)
+========================
+[Server] Listening on port 9000
+[Server] Client connected
+[Server] Queued initial state (2 bytes) for new client
+[Server] Sent 2 bytes to client
+[Server] Received SyncStep1 (4 bytes)
+[Server] Relaying sync message (not applying to server doc)
+[Server] Broadcast 4 bytes to 0 peer(s)
+[Server] Received SyncStep2 (57 bytes)
+[Protocol] Decoded SyncStep2: varUint=55 bytes, offset=1, payload=55
+[Document] Debug v1: NULL
+[Document] Debug v2: NULL
+[Document] V1 apply failed (error 3), trying V2...
+[Server] Received SyncStep2 (196 bytes)
+[Protocol] Decoded SyncStep2: varUint=193 bytes, offset=2, payload=193
+[Document] Debug v1: NULL
+[Document] Debug v2: NULL
+[Document] V1 apply failed (error 3), trying V2...
+[Server] Received SyncStep1 (25 bytes)
+[Server] Relaying sync message (not applying to server doc)
+[Server] Broadcast 25 bytes to 0 peer(s)
+[Server] Received SyncStep1 (21 bytes)
+[Server] Relaying sync message (not applying to server doc)
+[Server] Broadcast 21 bytes to 0 peer(s)
+[Server] Received SyncStep1 (21 bytes)
+[Server] Relaying sync message (not applying to server doc)
+[Server] Broadcast 21 bytes to 0 peer(s)
+[Server] Received SyncStep2 (71 bytes)
+[Protocol] Decoded SyncStep2: varUint=69 bytes, offset=1, payload=69
+[Document] Debug v1: NULL
+[Document] Debug v2: NULL
+[Document] V1 apply failed (error 3), trying V2...
+[Server] Received SyncStep2 (196 bytes)
+[Protocol] Decoded SyncStep2: varUint=193 bytes, offset=2, payload=193
+[Document] Debug v1: NULL
+[Document] Debug v2: NULL
+[Document] V1 apply failed (error 3), trying V2...
+[Server] Received SyncStep1 (21 bytes)
+[Server] Relaying sync message (not applying to server doc)
+[Server] Broadcast 21 bytes to 0 peer(s)
+[Server] Received SyncStep1 (21 bytes)
+[Server] Relaying sync message (not applying to server doc)
+[Server] Broadcast 21 bytes to 0 peer(s)
+[Server] Received SyncStep1 (21 bytes)
+[Server] Relaying sync message (not applying to server doc)
+[Server] Broadcast 21 bytes to 0 peer(s)
+[Server] Received SyncStep2 (71 bytes)
+[Protocol] Decoded SyncStep2: varUint=69 bytes, offset=1, payload=69
+[Document] Debug v1: NULL
+[Document] Debug v2: NULL
+[Document] V1 apply failed (error 3), trying V2...
+[Server] Client disconnected
+[Server] Client connected
+[Server] Queued initial state (2 bytes) for new client
+[Server] Sent 2 bytes to client
+[Server] Received SyncStep1 (10 bytes)
+[Server] Relaying sync message (not applying to server doc)
+[Server] Broadcast 10 bytes to 0 peer(s)
+[Server] Received SyncStep2 (71 bytes)
+[Protocol] Decoded SyncStep2: varUint=69 bytes, offset=1, payload=69
+[Document] Debug v1: NULL
+[Document] Debug v2: NULL
+[Document] V1 apply failed (error 3), trying V2...
+[Server] Received SyncStep2 (71 bytes)
+[Protocol] Decoded SyncStep2: varUint=69 bytes, offset=1, payload=69
+[Document] Debug v1: NULL
+[Document] Debug v2: NULL
+[Document] V1 apply failed (error 3), trying V2...
+[Server] Received SyncStep2 (71 bytes)
+[Protocol] Decoded SyncStep2: varUint=69 bytes, offset=1, payload=69
+[Document] Debug v1: NULL
+[Document] Debug v2: NULL
+[Document] V1 apply failed (error 3), trying V2...
+[Server] Client disconnected
+[Server] Client connected
+[Server] Queued initial state (2 bytes) for new client
+[Server] Sent 2 bytes to client
+[Server] Received SyncStep1 (10 bytes)
+[Server] Relaying sync message (not applying to server doc)
+[Server] Broadcast 10 bytes to 0 peer(s)
+[Server] Received SyncStep2 (71 bytes)
+[Protocol] Decoded SyncStep2: varUint=69 bytes, offset=1, payload=69
+[Document] Debug v1: NULL
+[Document] Debug v2: NULL
+[Document] V1 apply failed (error 3), trying V2...
+
+[Server] Received signal 15, shutting down...
+
+[Server] Shutting down...
+=== Document Content ===
+(empty)
+========================
+[Server] Client disconnected
+[Server] Shutdown complete

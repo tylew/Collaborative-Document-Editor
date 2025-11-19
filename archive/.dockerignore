@@ -1,0 +1,29 @@
+# Ignore build artifacts
+*.o
+*.so
+*.a
+host
+client
+server
+
+# Ignore git
+.git
+.gitignore
+
+# Ignore IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Ignore documentation
+*.md
+README*
+
+# Ignore Docker files themselves
+Dockerfile*
+docker-compose.yml
+.dockerignore
+
+
