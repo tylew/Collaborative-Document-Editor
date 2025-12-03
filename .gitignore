@@ -1,0 +1,6 @@
+node_modules/
+build/
+test-data/
+**/*.o
+**/*.bin
+**/.DS_Store
