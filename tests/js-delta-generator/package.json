@@ -1,0 +1,14 @@
+{
+  "name": "crdt-delta-generator",
+  "version": "1.0.0",
+  "description": "Generate test CRDT deltas using Yjs",
+  "type": "module",
+  "scripts": {
+    "generate": "node generate-test-deltas.js",
+    "clean": "rm -rf ../test-data/*"
+  },
+  "dependencies": {
+    "yjs": "^13.6.20"
+  }
+}
+
