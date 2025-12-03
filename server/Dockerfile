@@ -1,9 +1,7 @@
-# Development Dockerfile - installs dependencies, ready for interactive use
-# Build: docker build -f Dockerfile.dev -t crdt-host-dev .
-# Run:   docker run -it -v $(pwd):/app -p 9000:9000 crdt-host-dev bash
+# Dockerfile for CRDT C++ Host Base Image
+# Build: docker build -f Dockerfile -t crdt-cpp-host .
 
-# ---------- base stage ----------
-FROM ubuntu:22.04 AS base
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -34,16 +32,4 @@ RUN git clone --depth 1 https://github.com/y-crdt/y-crdt.git /tmp/y-crdt && \
     cp libyrs.h /usr/local/include/ && \
     rm -rf /tmp/y-crdt ~/.cargo/registry ~/.cargo/git && \
     ldconfig
-
-WORKDIR /app
-
-# ---------- dev stage ----------
-FROM base AS dev
-CMD ["bash"]
-
-# ---------- prod stage ----------
-FROM base AS prod
-COPY . /app
-RUN make
-ENTRYPOINT ["/app/crdt_server"]
 
