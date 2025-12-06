@@ -1,6 +1,9 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#include <cstdint>
+#include <cstddef>
+
 // Run server on specified port
 int server_run(int port);
 

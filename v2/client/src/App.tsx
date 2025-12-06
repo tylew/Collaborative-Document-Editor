@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import * as Y from 'yjs';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { QuillBinding } from 'y-quill';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
 import { YWebSocketProvider } from './lib/y-websocket-provider';
 
 const userColors = [
@@ -21,94 +22,95 @@ export default function App() {
   const [username, setUsername] = useState(generateUsername());
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
   const [synced, setSynced] = useState(false);
-  const [editorValue, setEditorValue] = useState('');
 
   const myColor = useRef(userColors[Math.floor(Math.random() * userColors.length)]);
   const ydocRef = useRef<Y.Doc | null>(null);
   const ytextRef = useRef<Y.Text | null>(null);
   const providerRef = useRef<YWebSocketProvider | null>(null);
-  const quillRef = useRef<ReactQuill | null>(null);
-  const isRemoteChange = useRef(false);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const quillInstanceRef = useRef<Quill | null>(null);
+  const bindingRef = useRef<QuillBinding | null>(null);
+
+
+
 
   useEffect(() => {
     // Initialize Yjs document
     const ydoc = new Y.Doc();
-    const ytext = ydoc.getText('document'); // MUST match server shared type
+    const ytext = ydoc.getText('quill'); // Match server shared type
     ydocRef.current = ydoc;
     ytextRef.current = ytext;
 
     // Connect to server
-    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:9000';
+    const wsUrl = 'ws://100.107.105.99:9000';
     console.log('[App] Connecting to', wsUrl);
 
+    // Use custom provider that works with our server
     const provider = new YWebSocketProvider(wsUrl, ydoc);
     providerRef.current = provider;
 
     // Status updates
-    provider.on('status', (event) => {
+    provider.on('status', (event: any) => {
       setStatus(event.status);
     });
 
     provider.on('synced', () => {
+      console.log('[App] Provider synced event received');
       setSynced(true);
     });
 
-    // Yjs -> React: Apply remote changes to editor
-    const ytextObserver = () => {
-      if (isRemoteChange.current) return;
+    // Initialize Quill editor with y-quill binding after provider is ready
+    const initEditor = () => {
+      if (editorRef.current && !quillInstanceRef.current && ydoc && ytext) {
+        try {
+          // Make sure the element is empty before initializing Quill
+          editorRef.current.innerHTML = '';
 
-      isRemoteChange.current = true;
-      const newText = ytext.toString();
-      setEditorValue(newText);
-      isRemoteChange.current = false;
+          const quill = new Quill(editorRef.current, {
+            theme: 'snow',
+            modules: {
+              toolbar: [
+                [{ 'header': [1, 2, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['link'],
+                ['clean']
+              ]
+            },
+            placeholder: 'Start collaborating...'
+          });
+
+          quillInstanceRef.current = quill;
+
+          // Bind Yjs to Quill - automatic synchronization
+          const binding = new QuillBinding(ytext, quill);
+          bindingRef.current = binding;
+
+          console.log('[App] Yjs-Quill binding established with standard provider');
+        } catch (error) {
+          console.error('[App] Failed to initialize Quill editor:', error);
+        }
+      }
     };
 
-    ytext.observe(ytextObserver);
+    // Initialize editor after a short delay to ensure DOM is ready
+    setTimeout(initEditor, 100);
 
     // Cleanup
     return () => {
-      ytext.unobserve(ytextObserver);
+      if (bindingRef.current) {
+        bindingRef.current.destroy();
+        bindingRef.current = null;
+      }
+      if (quillInstanceRef.current) {
+        // Quill doesn't have a destroy method, but we can clear the instance
+        quillInstanceRef.current = null;
+      }
       provider.destroy();
     };
   }, []);
 
-  const handleEditorChange = (content: string, _delta: any, _source: any, editor: any) => {
-    if (isRemoteChange.current) return;
 
-    const ytext = ytextRef.current;
-    const ydoc = ydocRef.current;
-    if (!ytext || !ydoc) return;
-
-    isRemoteChange.current = true;
-
-    // Get Quill delta
-    const delta = editor.getContents();
-
-    // Simple approach: sync plain text content
-    const currentText = ytext.toString();
-    if (currentText !== content) {
-      ydoc.transact(() => {
-        ytext.delete(0, currentText.length);
-        ytext.insert(0, content);
-      });
-    }
-
-    isRemoteChange.current = false;
-  };
-
-  const modules = {
-    toolbar: [
-      [{ header: [1, 2, false] }],
-      ['bold', 'italic', 'underline'],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      ['blockquote', 'code-block'],
-      ['link'],
-      ['clean'],
-    ],
-    history: {
-      userOnly: true,
-    },
-  };
 
   const getStatusColor = () => {
     if (status === 'connected' && synced) return 'bg-green-500';
@@ -167,13 +169,8 @@ export default function App() {
           {/* Editor */}
           <div className="lg:col-span-3">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <ReactQuill
-                ref={quillRef}
-                theme="snow"
-                value={editorValue}
-                onChange={handleEditorChange}
-                modules={modules}
-                placeholder="Start collaborating..."
+              <div
+                ref={editorRef}
                 className="h-[600px]"
               />
             </div>

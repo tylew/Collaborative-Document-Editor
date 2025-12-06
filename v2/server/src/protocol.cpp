@@ -120,7 +120,10 @@ uint8_t* encode_sync_step2(const uint8_t* update, size_t update_len, size_t* out
     buffer[pos++] = MSG_SYNC_STEP2;
     memcpy(buffer + pos, varint_buf, varint_len);
     pos += varint_len;
-    memcpy(buffer + pos, update, update_len);
+    // Only copy update data if it exists
+    if (update && update_len > 0) {
+        memcpy(buffer + pos, update, update_len);
+    }
 
     *out_len = total_len;
     return buffer;

@@ -45,27 +45,9 @@ static int callback_crdt(struct lws* wsi, enum lws_callback_reasons reason,
             printf("[Server] Client connected (total: %d)\n", peers_count() + 1);
             Peer* peer = peers_add(wsi);
 
-            // Send full state immediately (simple approach)
-            size_t state_len = 0;
-            uint8_t* state = g_document.get_state_as_update(&state_len);
-
-            if (state && state_len > 0) {
-                // Encode as SYNC_STEP2
-                size_t msg_len = 0;
-                uint8_t* msg = encode_sync_step2(state, state_len, &msg_len);
-
-                peer_queue_message(peer, msg, msg_len);
-                peer->synced = true;
-
-                printf("[Server] Queued initial state (%zu bytes) for new client\n", state_len);
-
-                free(msg);
-                free(state);
-            } else {
-                // Empty document, mark as synced anyway
-                peer->synced = true;
-                printf("[Server] Document empty, client synced\n");
-            }
+            // Don't send state immediately - wait for client's SYNC_STEP1 for proper differential sync
+            // This eliminates race conditions between initial sync and concurrent updates
+            peer->synced = false;
 
             break;
         }
@@ -86,41 +68,39 @@ static int callback_crdt(struct lws* wsi, enum lws_callback_reasons reason,
 
             if (msg_type == MSG_SYNC_STEP1) {
                 printf("[Server] Received SYNC_STEP1 (%zu bytes)\n", len);
-
-                // Client requesting state diff
-                size_t sv_len = 0;
-                const uint8_t* client_sv = decode_sync_step1(data, len, &sv_len);
-
-                if (client_sv) {
-                    // Send diff based on client's state vector
-                    size_t diff_len = 0;
-                    uint8_t* diff = g_document.get_state_diff(client_sv, sv_len, &diff_len);
-
-                    if (diff && diff_len > 0) {
-                        size_t msg_len = 0;
-                        uint8_t* msg = encode_sync_step2(diff, diff_len, &msg_len);
-
-                        Peer* peer = peers_find(wsi);
-                        if (peer) {
-                            peer_queue_message(peer, msg, msg_len);
-                            peer->synced = true;
-                        }
-
-                        printf("[Server] Sent state diff (%zu bytes)\n", diff_len);
-
-                        free(msg);
-                        free(diff);
-                    }
+                // Log first few bytes for debugging
+                printf("[Server] SYNC_STEP1 bytes:");
+                for (size_t i = 0; i < len && i < 16; i++) {
+                    printf(" %02x", (unsigned char)data[i]);
                 }
+                printf("\n");
+
+                // Send proper initial state from Yrs
+                size_t state_len = 0;
+                uint8_t* state = g_document.get_state_as_update(&state_len);
+
+                size_t msg_len = 0;
+                uint8_t* msg = encode_sync_step2(state, state_len, &msg_len);
+
+                Peer* peer = peers_find(wsi);
+                if (peer) {
+                    peer_queue_message(peer, msg, msg_len);
+                    peer->synced = true;
+                }
+
+                printf("[Server] Sent initial state (%zu bytes) as SYNC_STEP2\n", state_len);
+
+                free(msg);
+                if (state) free(state);
             }
             else if (msg_type == MSG_SYNC_STEP2) {
                 printf("[Server] Received SYNC_STEP2 (%zu bytes)\n", len);
 
-                // Client sending update
+                // Client sending update - try to decode and apply
                 size_t update_len = 0;
                 const uint8_t* update = decode_sync_step2(data, len, &update_len);
 
-                if (update) {
+                if (update && update_len > 0) {
                     // Apply to document
                     if (g_document.apply_update(update, update_len)) {
                         printf("[Server] Applied update (%zu bytes)\n", update_len);
@@ -137,7 +117,19 @@ static int callback_crdt(struct lws* wsi, enum lws_callback_reasons reason,
                     } else {
                         fprintf(stderr, "[Server] Failed to apply update\n");
                     }
+                } else {
+                    fprintf(stderr, "[Server] Failed to decode SYNC_STEP2 message (%zu bytes)\n", len);
+                    // Log first few bytes for debugging
+                    fprintf(stderr, "[Server] Message bytes:");
+                    for (size_t i = 0; i < len && i < 16; i++) {
+                        fprintf(stderr, " %02x", data[i]);
+                    }
+                    fprintf(stderr, "\n");
                 }
+            }
+            else if (msg_type == MSG_AWARENESS) {
+                // Awareness messages - just acknowledge for now
+                printf("[Server] Received AWARENESS message (%zu bytes)\n", len);
             }
             else {
                 fprintf(stderr, "[Server] Unknown message type: %d\n", msg_type);
@@ -229,8 +221,8 @@ int server_run(int port) {
     }
 
     printf("[Server] Listening on port %d\n", port);
-    printf("[Server] Shared type: 'document'\n");
-    printf("[Server] Protocol: y-websocket (SYNC_STEP1/SYNC_STEP2)\n");
+    printf("[Server] Shared type: 'quill'\n");
+    printf("[Server] Protocol: y-websocket (standard)\n");
 
     // Main event loop
     while (g_running) {

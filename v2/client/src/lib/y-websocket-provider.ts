@@ -8,10 +8,6 @@
 import * as Y from 'yjs';
 import { MessageType, encodeSyncStep1, encodeSyncStep2, decodeMessage } from './protocol';
 
-type StatusEvent = {
-  status: 'connecting' | 'connected' | 'disconnected' | 'error';
-};
-
 type EventCallback = (event: any) => void;
 
 export class YWebSocketProvider {
@@ -30,6 +26,7 @@ export class YWebSocketProvider {
   constructor(url: string, doc: Y.Doc) {
     this.doc = doc;
     this.url = url;
+    console.log('[Provider] Created provider for doc');
     this.connect();
   }
 
@@ -48,12 +45,23 @@ export class YWebSocketProvider {
     // Listen for local document updates
     this.updateHandler = (update: Uint8Array, origin: any) => {
       // Don't send updates that came from the server (origin === this)
-      if (origin !== this && this.connected && this.synced) {
+      // Allow sending updates even before initial sync is complete
+      if (origin !== this && this.connected) {
         this.sendUpdate(update);
       }
     };
 
     this.doc.on('update', this.updateHandler);
+
+    // Fallback: force sync completion after 3 seconds if not synced
+    setTimeout(() => {
+      if (!this.synced && this.connected) {
+        console.log('[Provider] Forcing sync completion after timeout');
+        this.synced = true;
+        this.emit('synced', {});
+      }
+    }, 3000);
+    console.log('[Provider] Set up document update listener');
   }
 
   private handleOpen() {
@@ -89,12 +97,17 @@ export class YWebSocketProvider {
         console.log('[Provider] Received SYNC_STEP2 (update:', payload.length, 'bytes)');
 
         // Server sending update - apply to document
-        Y.applyUpdate(this.doc, payload, this); // origin=this prevents echo
+        try {
+          Y.applyUpdate(this.doc, payload, this); // origin=this prevents echo
+          console.log('[Provider] Y.applyUpdate succeeded');
 
-        if (!this.synced) {
-          this.synced = true;
-          this.emit('synced', {});
-          console.log('[Provider] Document synced');
+          if (!this.synced) {
+            this.synced = true;
+            this.emit('synced', {});
+            console.log('[Provider] Document synced');
+          }
+        } catch (error) {
+          console.error('[Provider] Y.applyUpdate failed:', error);
         }
       } else if (type === MessageType.AWARENESS) {
         // Awareness not implemented
