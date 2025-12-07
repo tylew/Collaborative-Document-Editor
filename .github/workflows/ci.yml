@@ -1,1 +1,59 @@
+# name: ci
+
+# on:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+
+# jobs:
+#   build-server:
 #     runs-on: ubuntu-latest
+#     defaults:
+#       run:
+#         working-directory: server
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Build server image
+#         run: |
+#           docker build -t crdt-host-dev -f Dockerfile.dev .
+
+#       - name: Run server binary build
+#         run: |
+#           docker run --rm \
+#             -v "${PWD}:/app" \
+#             crdt-host-dev \
+#             bash -c "cd /app && LD_LIBRARY_PATH=/usr/local/lib make"
+
+#       # optional: archive built binary
+#       - name: Upload server binary
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: crdt_server
+#           path: server/crdt_server
+
+#   build-web-client:
+#     runs-on: ubuntu-latest
+#     defaults:
+#       run:
+#         working-directory: web-client
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - uses: actions/setup-node@v4
+#         with:
+#           node-version: 20
+#           cache: npm
+#           cache-dependency-path: web-client/package-lock.json
+
+#       - name: Install deps
+#         run: npm ci
+
+#       - name: Build client
+#         run: npm run build
+
+#       - name: Upload client dist
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: web-client-dist
+#           path: web-client/dist

@@ -30,11 +30,21 @@ export default function App() {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const quillInstanceRef = useRef<Quill | null>(null);
   const bindingRef = useRef<QuillBinding | null>(null);
+  const initializedRef = useRef(false);
 
 
 
 
   useEffect(() => {
+    // Prevent double initialization
+    if (initializedRef.current) {
+      console.log('[App] Already initialized, skipping');
+      return;
+    }
+    initializedRef.current = true;
+    
+    console.log('[App] Initializing...');
+    
     // Initialize Yjs document
     const ydoc = new Y.Doc();
     const ytext = ydoc.getText('quill'); // Match server shared type
@@ -42,7 +52,7 @@ export default function App() {
     ytextRef.current = ytext;
 
     // Connect to server
-    const wsUrl = 'ws://100.107.105.99:9000';
+    const wsUrl = 'ws://localhost:9000';
     console.log('[App] Connecting to', wsUrl);
 
     // Use custom provider that works with our server
@@ -98,15 +108,35 @@ export default function App() {
 
     // Cleanup
     return () => {
+      console.log('[App] Cleanup starting...');
+      
       if (bindingRef.current) {
         bindingRef.current.destroy();
         bindingRef.current = null;
       }
+      
       if (quillInstanceRef.current) {
-        // Quill doesn't have a destroy method, but we can clear the instance
+        // Quill doesn't have a destroy method, so we need to clean up manually
         quillInstanceRef.current = null;
       }
+      
+      // Clear the editor container to prevent duplicate editors
+      if (editorRef.current) {
+        editorRef.current.innerHTML = '';
+      }
+      
       provider.destroy();
+      
+      // Clean up YDoc
+      ydoc.destroy();
+      ydocRef.current = null;
+      ytextRef.current = null;
+      providerRef.current = null;
+      
+      // Reset initialization flag for potential re-mount
+      initializedRef.current = false;
+      
+      console.log('[App] Cleanup complete');
     };
   }, []);
 
@@ -207,7 +237,7 @@ export default function App() {
                 <div className="text-xs text-gray-500 space-y-1">
                   <p>Protocol: y-websocket v2</p>
                   <p>CRDT: Yjs (libyrs server)</p>
-                  <p>Shared type: "document"</p>
+                  <p>Shared type: "quill"</p>
                   <p>Sync: SYNC_STEP1/STEP2</p>
                 </div>
               </div>

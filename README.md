@@ -5,12 +5,11 @@ Real-time collaborative text editor using CRDTs (Conflict-free Replicated Data T
 ## Architecture
 
 ```
-┌─────────────────┐      WebSocket (Raw Yjs Updates)     ┌──────────────────┐
-│  React Client   │ ◄──────────────────────────────────► │   C++ Server     │
-│  (TypeScript)   │                                      │   (libyrs)       │
-│  + Yjs CRDT     │ ◄──────────────────────────────────► │   + libwebsockets│
-└─────────────────┘                                      └──────────────────┘
-    Quill Editor                                         Document Persistence
+┌─────────────────┐      WebSocket (Raw Yjs Updates)     ┌────────────────────┐
+│     Client      │ ◄──────────────────────────────────► │     Server         │
+│   > React       │                                      │   > Yrs C-binds    │
+│   > Yjs CRDT    │ ◄──────────────────────────────────► │   > libwebsockets  │
+└─────────────────┘                                      └────────────────────┘ Collaborative Editor                                      Document Persistence
 ```
 
 ## Components

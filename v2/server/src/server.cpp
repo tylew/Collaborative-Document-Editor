@@ -193,7 +193,7 @@ int server_run(int port) {
     // Initialize subsystems
     peers_init();
 
-    if (!g_document.init("document")) {
+    if (!g_document.init("quill")) {
         fprintf(stderr, "[Server] Failed to initialize document\n");
         return 1;
     }
@@ -221,8 +221,8 @@ int server_run(int port) {
     }
 
     printf("[Server] Listening on port %d\n", port);
-    printf("[Server] Shared type: 'quill'\n");
-    printf("[Server] Protocol: y-websocket (standard)\n");
+    printf("[Server] Shared type: 'quill' (matches y-quill client)\n");
+    printf("[Server] Protocol: y-websocket (SYNC_STEP1/STEP2)\n");
 
     // Main event loop
     while (g_running) {

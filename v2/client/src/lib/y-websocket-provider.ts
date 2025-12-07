@@ -27,6 +27,32 @@ export class YWebSocketProvider {
     this.doc = doc;
     this.url = url;
     console.log('[Provider] Created provider for doc');
+    
+    // Set up update handler ONCE in constructor (not in connect)
+    this.updateHandler = (update: Uint8Array, origin: any) => {
+      console.log('[Provider] Update event fired!', {
+        updateLength: update.length,
+        origin: origin,
+        originIsThis: origin === this,
+        connected: this.connected,
+        synced: this.synced,
+        wsState: this.ws?.readyState
+      });
+      
+      // Don't send updates that came from the server (origin === this)
+      if (origin !== this && this.connected) {
+        console.log('[Provider] Condition passed, sending update...');
+        this.sendUpdate(update);
+      } else {
+        console.log('[Provider] Condition failed, NOT sending update', {
+          reason: origin === this ? 'origin is this (server update)' : 'not connected'
+        });
+      }
+    };
+
+    this.doc.on('update', this.updateHandler);
+    console.log('[Provider] Registered update handler on doc');
+    
     this.connect();
   }
 
@@ -42,17 +68,6 @@ export class YWebSocketProvider {
     this.ws.onerror = (error) => this.handleError(error);
     this.ws.onclose = () => this.handleClose();
 
-    // Listen for local document updates
-    this.updateHandler = (update: Uint8Array, origin: any) => {
-      // Don't send updates that came from the server (origin === this)
-      // Allow sending updates even before initial sync is complete
-      if (origin !== this && this.connected) {
-        this.sendUpdate(update);
-      }
-    };
-
-    this.doc.on('update', this.updateHandler);
-
     // Fallback: force sync completion after 3 seconds if not synced
     setTimeout(() => {
       if (!this.synced && this.connected) {
@@ -61,7 +76,6 @@ export class YWebSocketProvider {
         this.emit('synced', {});
       }
     }, 3000);
-    console.log('[Provider] Set up document update listener');
   }
 
   private handleOpen() {
