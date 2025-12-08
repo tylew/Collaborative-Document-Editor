@@ -307,8 +307,6 @@ int server_run(int port) {
     }
 
     printf("[Server] Listening on port %d\n", port);
-    printf("[Server] Shared type: 'quill' (matches y-quill client)\n");
-    printf("[Server] Protocol: y-websocket (SYNC_STEP1/STEP2)\n");
 
     // Main event loop
     while (g_running) {
