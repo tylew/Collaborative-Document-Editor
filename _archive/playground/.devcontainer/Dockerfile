@@ -1,0 +1,37 @@
+# Dockerfile for CRDT C++ Host Base Image
+# Build: docker build -f Dockerfile -t crdt-cpp-host .
+
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    clangd \
+    bear \
+    libwebsockets-dev \
+    libomp-dev \
+    curl \
+    git \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust/Cargo for building yffi
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+RUN cargo install cbindgen
+
+# Build yffi (Yrs FFI bindings) from source
+RUN git clone --depth 1 https://github.com/y-crdt/y-crdt.git /tmp/y-crdt && \
+    cd /tmp/y-crdt && \
+    cargo build --release --package yffi && \
+    cbindgen --config yffi/cbindgen.toml --crate yffi --output libyrs.h && \
+    cp target/release/libyrs.so /usr/local/lib/ && \
+    cp libyrs.h /usr/local/include/ && \
+    rm -rf /tmp/y-crdt ~/.cargo/registry ~/.cargo/git && \
+    ldconfig
+

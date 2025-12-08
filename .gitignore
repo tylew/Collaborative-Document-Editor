@@ -2,5 +2,33 @@ node_modules/
 build/
 test-data/
 **/*.o
+**/*.d
 **/*.bin
 **/.DS_Store
+
+# Client build artifacts
+client/node_modules/
+client/dist/
+client/.vite/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

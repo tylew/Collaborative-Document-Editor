@@ -1,0 +1,36 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++11",
+      "-Wall",
+      "-Wextra",
+      "-O2",
+      "-I./include",
+      "-c",
+      "-o",
+      "build/main.o",
+      "src/main.cpp"
+    ],
+    "directory": "/workspace",
+    "file": "/workspace/src/main.cpp",
+    "output": "/workspace/build/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++11",
+      "-Wall",
+      "-Wextra",
+      "-O2",
+      "-I./include",
+      "-c",
+      "-o",
+      "build/server.o",
+      "src/server.cpp"
+    ],
+    "directory": "/workspace",
+    "file": "/workspace/src/server.cpp",
+    "output": "/workspace/build/server.o"
+  }
+]

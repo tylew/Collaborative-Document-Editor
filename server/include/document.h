@@ -1,26 +1,42 @@
 #ifndef DOCUMENT_H
 #define DOCUMENT_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 extern "C" {
 #include <libyrs.h>
 }
 
-// Document management
-void document_init();
-void document_destroy();
+class Document {
+public:
+    Document();
+    ~Document();
 
-// Apply update from client and get the update to broadcast
-// Returns malloc'd buffer that caller must free, or NULL if error
-unsigned char* document_apply_update(const unsigned char *data, size_t len, size_t *out_len);
+    // Initialize document with shared type name
+    bool init(const char* shared_type_name);
 
-// Get current document state for new clients
-unsigned char* document_get_state(size_t *out_len);
+    // Apply update from client
+    bool apply_update(const uint8_t* update, size_t len);
 
-// Print current document content
-void document_print();
+    // Get full state as update (for new clients)
+    uint8_t* get_state_as_update(size_t* out_len);
 
-// Get the YDoc for direct access if needed
-YDoc* document_get_doc();
+    // Get state vector (what we have)
+    uint8_t* get_state_vector(size_t* out_len);
+
+    // Get state diff based on client's state vector
+    uint8_t* get_state_diff(const uint8_t* client_sv, size_t sv_len, size_t* out_len);
+
+    // Get current text content (for debugging)
+    char* get_text_content();
+
+    // Get underlying YDoc (for persistence)
+    YDoc* get_doc() { return m_doc; }
+
+private:
+    YDoc* m_doc;
+    Branch* m_text;
+};
 
 #endif // DOCUMENT_H
-

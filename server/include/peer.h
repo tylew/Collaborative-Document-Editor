@@ -3,40 +3,57 @@
 
 #include <libwebsockets.h>
 #include <omp.h>
+#include <stdint.h>
 #include <stddef.h>
 
-// Pending update for a peer
-struct pending_update {
-    unsigned char *data;
+// Pending message to send to peer
+struct PendingMessage {
+    uint8_t* data;
     size_t len;
-    pending_update *next;
+    PendingMessage* next;
 };
 
-// Connected peer structure
-struct peer {
-    struct lws *wsi;
-    bool synced;
-    pending_update *pending;
+// Peer (connected client)
+struct Peer {
+    struct lws* wsi;
+    bool synced;           // Has received initial state?
+    PendingMessage* pending_queue;
     omp_lock_t lock;
-    peer *next;
+    uint32_t client_id;     // Yjs client ID for awareness
+    char* awareness_json;   // Last known awareness state (JSON)
+    size_t awareness_len;
+    Peer* next;
 };
 
-// Exposed globals for advanced use (e.g., broadcasting)
-extern peer *g_peers;
+// Global peer list (thread-safe)
+extern Peer* g_peers;
 extern omp_lock_t g_peers_lock;
 
-// Global peer list management
+// Initialize peer system
 void peers_init();
+
+// Cleanup peer system
 void peers_destroy();
-peer* peers_add(struct lws *wsi);
-void peers_remove(struct lws *wsi);
-peer* peers_find(struct lws *wsi);
+
+// Add new peer
+Peer* peers_add(struct lws* wsi);
+
+// Remove peer
+void peers_remove(struct lws* wsi);
+
+// Find peer by wsi
+Peer* peers_find(struct lws* wsi);
+
+// Get peer count
 int peers_count();
 
-// Peer update queue
-void peer_queue_update(peer *p, const unsigned char *data, size_t len);
-pending_update* peer_dequeue_update(peer *p);
-void peer_free_update(pending_update *upd);
+// Queue message for peer
+void peer_queue_message(Peer* p, const uint8_t* data, size_t len);
+
+// Dequeue next message for peer
+PendingMessage* peer_dequeue_message(Peer* p);
+
+// Free message
+void peer_free_message(PendingMessage* msg);
 
 #endif // PEER_H
-
