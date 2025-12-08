@@ -256,6 +256,23 @@ export default function App() {
     setIsJoined(true);
   };
 
+  const selfId = ydocRef.current?.clientID;
+  // Get all other peers
+  const otherPeers = [...awarenessMap.entries()].filter(([clientId]) => clientId !== selfId);
+  
+  // Sort peers: prioritize those with cursors
+  const sortedPeers = otherPeers.sort(([_idA, stateA], [_idB, stateB]) => {
+    const aHasCursor = !!stateA.cursor;
+    const bHasCursor = !!stateB.cursor;
+    if (aHasCursor && !bHasCursor) return -1;
+    if (!aHasCursor && bHasCursor) return 1;
+    return 0;
+  });
+
+  const MAX_DISPLAY_PEERS = 5;
+  const displayPeers = sortedPeers.slice(0, MAX_DISPLAY_PEERS);
+  const remainingPeersCount = sortedPeers.length - MAX_DISPLAY_PEERS;
+
   if (!isJoined) {
     return <JoinModal onJoin={handleJoin} />;
   }
@@ -327,9 +344,7 @@ export default function App() {
                     {username} <span className="text-gray-500">(You)</span>
                   </span>
                 </div>
-                {[...awarenessMap.entries()]
-                  .filter(([clientId]) => clientId !== ydocRef.current?.clientID)
-                  .map(([clientId, state]) => (
+                {displayPeers.map(([clientId, state]) => (
                     <div key={clientId} className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
                       <div
                         className="w-3 h-3 rounded-full"
@@ -345,7 +360,16 @@ export default function App() {
                       )}
                     </div>
                   ))}
-                {awarenessMap.size === 0 && (
+                
+                {remainingPeersCount > 0 && (
+                  <div className="flex items-center space-x-2 p-2 pl-7">
+                    <span className="text-sm text-gray-500 italic">
+                      ...and {remainingPeersCount} other peer{remainingPeersCount > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                )}
+
+                {sortedPeers.length === 0 && (
                   <div className="flex items-center space-x-2 p-2 opacity-50">
                     <div className="w-3 h-3 rounded-full bg-gray-400" />
                     <span className="text-sm text-gray-500">
