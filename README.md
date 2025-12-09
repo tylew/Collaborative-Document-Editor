@@ -61,11 +61,11 @@ Concurrency is managed at two levels:
 2.  **Application Level:** **OpenMP** locks (`omp_lock_t`) are used to protect shared in-memory data structures (specifically the global peer list). This ensures that as clients connect and disconnect, the critical sections of code that modify or traverse this list are thread-safe and free from race conditions.
 
 **Result:**
-1.  **Crash Prevention:** Effectively prevents Segmentation Faults caused by race conditions when a user disconnects (freeing memory) while the server is broadcasting.
-2.  **Consistency:** Ensures updates are **only** broadcast to peers who have completed the initial handshake (`p->synced == true`). The lock prevents a race where a peer might be marked "synced" halfway through a broadcast, potentially receiving a delta before their initial snapshot, which would corrupt their state.
+1.  **Consistency:** Ensures updates are **only** broadcast to peers who have completed the initial handshake (`p->synced == true`). The lock prevents a race where a peer might be marked "synced" halfway through a broadcast, potentially receiving a delta before their initial snapshot, which would corrupt their state.
+2.  **Crash Prevention:** Effectively prevents Segmentation Faults caused by race conditions when a user disconnects while the server is broadcasting.
 
 ### How we applied OpenMP
-We utilized the **OpenMP Runtime Library** (`<omp.h>`) specifically for its portable locking mechanisms to manage the shared state of connected peers. This ensures that as clients connect and disconnect (modifying the linked list), the broadcasting thread does not access invalid memory.
+We utilized the **OpenMP Runtime Library** (`<omp.h>`) specifically for its portable locking mechanisms to manage the shared state of connected peers. This ensures that as clients connect and disconnect (modifying the linked list tracking active connections), the broadcasting thread does not access invalid memory.
 
 ### Code Snippet: Thread-Safe Broadcast
 The following snippet demonstrates how we protect the broadcast loop using OpenMP locks:
@@ -121,7 +121,7 @@ The code snippets above demonstrate a classic **Reader-Writer Lock** pattern imp
     *(Note: Latency scales linearly $O(N)$ as expected due to the serial broadcast loop, doubling from 100 to 200 clients.)*
 
 ### Bottlenecks Identified
-*   **Serial Broadcast Loop:** The `while(p)` loop inside `server_broadcast` processes peers sequentially. For $10,000$ users, this becomes a bottleneck. This is a prime candidate for `parallel for` optimization.
+*   **Serial Broadcast Loop:** The `while(p)` loop inside `server_broadcast` processes peers sequentially. For many users, this becomes a bottleneck. This is a prime candidate for `parallel for` optimization.
 
 ## Discussion
 
@@ -129,14 +129,13 @@ The code snippets above demonstrate a classic **Reader-Writer Lock** pattern imp
 *   **CRDT Integration:** The Yrs library handled the complex math of conflict resolution perfectly, allowing us to focus on the transport layer.
 *   **OpenMP Synchronization:** Using `omp_lock_t` was simpler and more portable than managing raw `pthread_mutex_t` or C++11 `std::mutex` for this specific C-style linked list structure.
 
-### What didn't work / Limitations
+### Limitations
 *   **Single-Threaded Event Loop:** `libwebsockets` default event loop is single-threaded. While our data structures are thread-safe, the actual network packet processing is serialized on a single core.
 *   **Memory Management:** Manual memory management (malloc/free) for the peer list and message queues introduced complexity and potential leaks if not handled carefully in the destructor.
 
 ## Conclusion
 
-### What did you learn?
-We learned that **Thread Safety is not just about parallelism; it's about correctness.** Even in a mostly serial event loop, handling callbacks that modify shared state requires rigorous critical section management. We also gained practical experience integrating C++ backends with modern React frontends via binary WebSocket protocols.
+I learned that **high performance compute is not just about parallelism; it's about correctness.** Even in a mostly serial event loop, handling callbacks that modify shared state requires rigorous critical section management. I also gained practical experience integrating C++ backends with modern React frontends via binary WebSocket protocols.
 
 ### What should be done next?
 1.  **Parallelize Broadcast:** Use `#pragma omp parallel` to parallelize the message queuing process for connected peers.
