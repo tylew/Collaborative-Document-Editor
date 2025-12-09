@@ -24,7 +24,7 @@ export const JoinModal: React.FC<JoinModalProps> = ({ onJoin, initialUsername = 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-75">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full mx-4">
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900">

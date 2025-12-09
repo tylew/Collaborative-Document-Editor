@@ -8,6 +8,7 @@ import 'quill/dist/quill.snow.css';
 import { YWebSocketProvider, AwarenessState } from './lib/y-websocket-provider';
 import { InfoModal } from './components/InfoModal';
 import { JoinModal } from './components/JoinModal';
+import { UserProfile } from './components/UserProfile';
 
 const userColors = [
   '#30bced', '#6eeb83', '#ffbc42', '#ecd444', '#ee6352',
@@ -67,7 +68,8 @@ export default function App() {
     ytextRef.current = ytext;
 
     // Connect to server
-    const wsUrl = 'ws://100.104.86.121:9000';
+    // const wsUrl = 'ws://100.104.86.121:9000';
+    const wsUrl = 'wss://tylers-personal.flounder-blenny.ts.net:443/ws';
     console.log('[App] Connecting to', wsUrl);
 
     // Use custom provider that works with our server
@@ -273,143 +275,133 @@ export default function App() {
   const displayPeers = sortedPeers.slice(0, MAX_DISPLAY_PEERS);
   const remainingPeersCount = sortedPeers.length - MAX_DISPLAY_PEERS;
 
-  if (!isJoined) {
-    return <JoinModal onJoin={handleJoin} />;
-  }
-
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 flex-shrink-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <h1 className="text-xl font-bold text-gray-900">
-                Collaborative Document Editor
-              </h1>
-              <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
-                <span className="text-sm text-gray-600">
-                  {getStatusText()}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ background: myColor.current }}
-                />
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Your name"
-                />
-              </div>
-            </div>
-          </div>
+    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden relative">
+      {/* Join Modal Overlay */}
+      {!isJoined && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-900/20 backdrop-blur-sm">
+          <JoinModal onJoin={handleJoin} />
         </div>
-      </header>
+      )}
 
-      {/* Main Content */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 min-h-0">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
-          {/* Editor */}
-          <div className="lg:col-span-3 h-full">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden h-full flex flex-col">
-              <div
-                ref={editorRef}
-                className="flex-1 overflow-hidden"
-              />
-            </div>
-
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1 h-full min-h-0">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 max-h-full overflow-y-auto">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Connected Users
-              </h2>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ background: myColor.current }}
-                  />
-                  <span className="text-sm text-gray-900">
-                    {username} <span className="text-gray-500">(You)</span>
+      {/* Main App UI - always rendered but disabled if not joined */}
+      <div className={`flex flex-col h-full ${!isJoined ? 'pointer-events-none select-none' : ''}`}>
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 flex-shrink-0">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center space-x-3">
+                <h1 className="text-xl font-bold text-gray-900">
+                  Collaborative Document Editor
+                </h1>
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
+                  <span className="text-sm text-gray-600">
+                    {getStatusText()}
                   </span>
                 </div>
-                {displayPeers.map(([clientId, state]) => (
-                    <div key={clientId} className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ background: state.user.color }}
-                      />
-                      <span className="text-sm text-gray-900">
-                        {state.user.name || `User ${clientId}`}
-                      </span>
-                      {state.cursor && (
-                        <span className="text-xs text-gray-500">
-                          (cursor: {state.cursor.index}, len {state.cursor.length})
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                
-                {remainingPeersCount > 0 && (
-                  <div className="flex items-center space-x-2 p-2 pl-7">
-                    <span className="text-sm text-gray-500 italic">
-                      ...and {remainingPeersCount} other peer{remainingPeersCount > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                )}
-
-                {sortedPeers.length === 0 && (
-                  <div className="flex items-center space-x-2 p-2 opacity-50">
-                    <div className="w-3 h-3 rounded-full bg-gray-400" />
-                    <span className="text-sm text-gray-500">
-                      No other peers connected
-                    </span>
-                  </div>
-                )}
               </div>
 
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  About
-                </h3>
-                <p className="text-xs text-gray-500 mb-3">
-                  Real-time collaborative document editor powered by Yjs CRDT.
-                  Changes sync automatically with proper protocol implementation.
-                </p>
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline focus:outline-none"
-                >
-                  More Information
-                </button>
+              <div className="flex items-center space-x-4">
+                <UserProfile 
+                  username={username || 'Guest'} 
+                  color={myColor.current} 
+                  onSave={setUsername}
+                />
               </div>
-             
             </div>
           </div>
-        </div>
+        </header>
 
-      {/* Footer */}
-      {/* <footer className="mt-8 py-6 border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-sm text-gray-500">
-            Tyler Lewis 2025 • Version 2.0.0 • <a href="https://github.com/tylew/Collaborative-Document-Editor" className="text-blue-500">GitHub</a>
-            </p>
+        {/* Main Content */}
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
+            {/* Editor */}
+            <div className="lg:col-span-3 h-full">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden h-full flex flex-col">
+                <div
+                  ref={editorRef}
+                  className="flex-1 overflow-hidden"
+                />
+              </div>
+
+            </div>
+
+            {/* Sidebar */}
+            <div className="lg:col-span-1 h-full min-h-0">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 max-h-full overflow-y-auto">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Connected Users
+                </h2>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ background: myColor.current }}
+                    />
+                    <span className="text-sm text-gray-900">
+                      {username || 'You (Joining...)'} <span className="text-gray-500">(You)</span>
+                    </span>
+                  </div>
+                  {displayPeers.map(([clientId, state]) => (
+                      <div key={clientId} className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ background: state.user.color }}
+                        />
+                        <span className="text-sm text-gray-900">
+                          {state.user.name || `User ${clientId}`}
+                        </span>
+                        {state.cursor && (
+                          <span className="text-xs text-gray-500">
+                            (cursor: {state.cursor.index}, len {state.cursor.length})
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  
+                  {remainingPeersCount > 0 && (
+                    <div className="flex items-center space-x-2 p-2 pl-7">
+                      <span className="text-sm text-gray-500 italic">
+                        ...and {remainingPeersCount} other peer{remainingPeersCount > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  )}
+
+                  {sortedPeers.length === 0 && (
+                    <div className="flex items-center space-x-2 p-2 opacity-50">
+                      <div className="w-3 h-3 rounded-full bg-gray-400" />
+                      <span className="text-sm text-gray-500">
+                        No other peers connected
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    About
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Real-time collaborative document editor powered by Yjs CRDT.
+                    Changes sync automatically with proper protocol implementation.
+                  </p>
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline focus:outline-none"
+                  >
+                    More Information
+                  </button>
+                </div>
+               
+              </div>
+            </div>
           </div>
-        </footer> */}
+
         </main>
       
-      <InfoModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+        <InfoModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      </div>
     </div>
   );
 }
