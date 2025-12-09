@@ -1,0 +1,19 @@
+{
+  "name": "Document Editor Client",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:dev-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "forwardPorts": [3000, 3000],
+  "postCreateCommand": "cd client && npm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next"
+      ]
+    }
+  }
+}
+

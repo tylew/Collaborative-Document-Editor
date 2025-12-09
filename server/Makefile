@@ -39,12 +39,14 @@ clean:
 run: $(TARGET)
 	LD_LIBRARY_PATH=/usr/local/lib ./$(TARGET) 9000
 
-run-docker:
-	@echo "Building and running server in Docker container..."
-	docker run --rm -v "$(PWD)":/workspace -w /workspace crdt-v2-server make
-	docker run --rm -v "$(PWD)":/workspace -w /workspace -p 9000:9000 \
+run-preview:
+	@echo "Starting server container in detached mode..."
+	docker run -d --rm -v "$(PWD)":/workspace -w /workspace -p 9000:9000 \
 		--name crdt-server-container crdt-v2-server \
 		bash -c "LD_LIBRARY_PATH=/usr/local/lib stdbuf -o0 ./build/crdt_server 9000"
+	@echo "Server container started in background. Use 'docker ps' to check status."
+	@echo "Server: http://localhost:9000"
+
 
 # build
 build: clean $(TARGET)
